@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>VentaBox · Consulta</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">VentaBox</div>
+    <div class="session-info" id="sessionInfo"></div>
+  </header>
+
+  <main id="app">
+    <!-- Login -->
+    <section id="loginView" class="view">
+      <div class="card login-card">
+        <h1>Consulta remota</h1>
+        <p class="muted">Ingresa el PIN que configuró el dueño del negocio</p>
+        <input type="password" id="pinInput" inputmode="numeric" autocomplete="off"
+               placeholder="PIN de acceso" maxlength="10">
+        <button id="loginBtn" class="btn primary">Entrar</button>
+        <p id="loginError" class="error"></p>
+      </div>
+    </section>
+
+    <!-- Home -->
+    <section id="homeView" class="view hidden">
+      <div id="kpis" class="kpis"></div>
+      <nav class="tabs">
+        <button class="tab active" data-tab="dashboard">Resumen</button>
+        <button class="tab" data-tab="inventory">Inventario</button>
+        <button class="tab" data-tab="sales">Ventas</button>
+        <button class="tab" data-tab="report">Reporte</button>
+      </nav>
+
+      <div id="tab-dashboard" class="tabpanel"></div>
+      <div id="tab-inventory" class="tabpanel hidden">
+        <input type="search" id="searchInv" placeholder="Buscar producto...">
+        <select id="catFilter"></select>
+        <div id="inventoryList"></div>
+      </div>
+      <div id="tab-sales" class="tabpanel hidden">
+        <input type="date" id="salesDate">
+        <div id="salesList"></div>
+      </div>
+      <div id="tab-report" class="tabpanel hidden">
+        <div class="card">
+          <h2 class="muted" style="margin-bottom:8px">Descargar reporte del día</h2>
+          <p class="muted" style="font-size:13px;margin-bottom:14px">
+            Genera un PDF con el detalle de ventas, ganancias, dinero en caja y transferencias.
+            Se abrirá el diálogo de impresión: elige «Guardar como PDF».
+          </p>
+          <input type="date" id="reportDate" style="margin-bottom:4px">
+          <button id="reportBtn" class="btn primary">Descargar reporte PDF</button>
+          <p id="reportStatus" class="error"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <span id="lastSync">Última actualización: —</span>
+    <button class="link" id="logoutBtn" title="Cerrar sesión">Salir</button>
+  </footer>
+
+  <!-- Contenido del reporte (solo visible al imprimir / guardar PDF) -->
+  <div id="printArea"></div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
