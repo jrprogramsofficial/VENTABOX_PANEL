@@ -18,7 +18,57 @@
     store: [],
     warehouse: [],
     today: null,
+    offline: false,
   };
+
+  /* ---------------- Caché local (modo sin conexión) ---------------- */
+
+  var CACHE_KEY = "vb_cache";
+  var SALES_KEY = "vb_sales_cache";
+  var MAX_SALES_DATES = 40;
+
+  function saveCache() {
+    try {
+      window.localStorage.setItem(CACHE_KEY, JSON.stringify({
+        savedAt: Date.now(),
+        products: state.products,
+        store: state.store,
+        warehouse: state.warehouse,
+        today: state.today,
+      }));
+    } catch (e) { /* almacenamiento no disponible */ }
+  }
+
+  function loadCache() {
+    try {
+      var c = JSON.parse(window.localStorage.getItem(CACHE_KEY) || "null");
+      return c && c.products ? c : null;
+    } catch (e) { return null; }
+  }
+
+  function saveSalesCache(date, win) {
+    try {
+      var all = JSON.parse(window.localStorage.getItem(SALES_KEY) || "{}");
+      all[date] = { savedAt: Date.now(), win: win };
+      var keys = Object.keys(all).sort();
+      while (keys.length > MAX_SALES_DATES) delete all[keys.shift()];
+      window.localStorage.setItem(SALES_KEY, JSON.stringify(all));
+    } catch (e) { /* almacenamiento no disponible */ }
+  }
+
+  function salesCacheFor(date) {
+    try {
+      var all = JSON.parse(window.localStorage.getItem(SALES_KEY) || "{}");
+      return all[date] ? all[date].win : null;
+    } catch (e) { return null; }
+  }
+
+  function setSyncLabel(text, offline) {
+    $("lastSync").textContent = text;
+    var banner = $("offlineBanner");
+    if (banner) banner.classList.toggle("hidden", !offline);
+    state.offline = !!offline;
+  }
 
   var byId = {};
   function indexProducts() {
@@ -123,12 +173,23 @@
       state.warehouse = parts[2];
       indexProducts();
       fillCategories();
-      $("lastSync").textContent = "Actualizado: " + new Date().toLocaleTimeString("es-ES");
+      setSyncLabel("Actualizado: " + new Date().toLocaleTimeString("es-ES"), false);
+      saveCache();
       renderDashboard();
       renderInventory($("searchInv").value, $("catFilter").value);
     } catch (e) {
       if (e.message.indexOf("Sesión") !== -1) return show("login");
-      toastError(e.message);
+      var cache = loadCache();
+      if (!cache) return toastError(e.message);
+      state.products = cache.products;
+      state.store = cache.store;
+      state.warehouse = cache.warehouse;
+      state.today = cache.today || null;
+      indexProducts();
+      fillCategories();
+      setSyncLabel("Sin conexión · datos guardados el " + new Date(cache.savedAt).toLocaleString("es-ES"), true);
+      renderDashboard();
+      renderInventory($("searchInv").value, $("catFilter").value);
     }
   }
 
@@ -301,6 +362,11 @@
 
   async function daySales(date) {
     requireToken();
+    if (state.offline) {
+      var cached = salesCacheFor(date);
+      if (cached) return cached;
+      throw new Error("Sin conexión: no hay datos guardados para esta fecha");
+    }
     var nextStr = addDays(date, 1);
     var sales = await query("sales",
       "select=id,total,dependiente,modo_pago,monto_efectivo,monto_transferencia,created_at" +
@@ -329,6 +395,7 @@
     list.innerHTML = '<div class="spinner">Cargando ventas...</div>';
     try {
       var win = await daySales(date);
+      saveSalesCache(date, win);
       if (!win.sales.length) {
         list.innerHTML = '<div class="spinner">No hay ventas este día</div>';
         return;
@@ -417,8 +484,13 @@
     loadAll();
     daySales(todayStr()).then(function (win) {
       state.today = win;
+      saveSalesCache(todayStr(), win);
+      saveCache();
       renderDashboard();
-    }).catch(function () {});
+    }).catch(function () {
+      var cached = salesCacheFor(todayStr());
+      if (cached) { state.today = cached; renderDashboard(); }
+    });
   }
 
   function logout() {
@@ -450,6 +522,26 @@
       if (name === "inventory") renderInventory($("searchInv").value, $("catFilter").value);
       if (name === "sales") renderSales($("salesDate").value || todayStr());
     });
+  });
+
+  /* ---------------- Reconexión ---------------- */
+
+  window.addEventListener("offline", function () {
+    if ($("homeView").classList.contains("hidden")) return;
+    setSyncLabel("Sin conexión · mostrando la última información guardada", true);
+  });
+
+  window.addEventListener("online", function () {
+    if ($("homeView").classList.contains("hidden")) return;
+    var date = $("salesDate").value || todayStr();
+    loadAll();
+    daySales(date).then(function (win) {
+      state.today = win;
+      saveSalesCache(date, win);
+      saveCache();
+      renderDashboard();
+      if (!$("tab-sales").classList.contains("hidden")) renderSales(date);
+    }).catch(function () {});
   });
 
   /* ---------------- Inicio ---------------- */

@@ -34,6 +34,16 @@ header {
 .logo { font-weight: 800; letter-spacing: 0.5px; color: var(--primary); font-size: 18px; }
 .session-info { font-size: 12px; color: var(--muted); }
 
+.offline-banner {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warning);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.35);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  padding: 8px 12px;
+}
+
 main { max-width: 640px; margin: 0 auto; padding: 16px; }
 
 .view { padding-top: 8px; }
