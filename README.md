@@ -31,7 +31,15 @@ función con el PIN.
 
 ## Desplegar
 
-### Netlify (gratis)
+### GitHub Pages (recomendado, gratis)
+1. Haz push de este repo (el workflow [`.github/workflows/deploy-panel.yml`](../.github/workflows/deploy-panel.yml) despliega `panel/` solo).
+2. En GitHub: **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. Haz push a `main` que toque `panel/` o ejecuta manual: **Actions → Deploy Panel to GitHub Pages → Run workflow**.
+4. Copia la URL (ej: `https://jrprogramsofficial.github.io/VENTABOX_INVENTORY/`) y pégala en la app de escritorio:
+   **Configuración → Supabase · Acceso Online → Panel web → Guardar**
+   (la app genera un QR para el celular).
+
+### Netlify (gratis, alternativo)
 1. Edita [`config.js`](config.js) con tu Project URL (el resto se calcula solo).
 2. [netlify.com](https://netlify.com) → **Add new site → Deploy manually**.
 3. Arrastra esta carpeta `panel/` (los 4 archivos: `index.html`, `style.css`, `app.js`, `config.js`).
